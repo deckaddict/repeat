@@ -1,0 +1,96 @@
+#!/data/data/com.termux/files/usr/bin/python
+
+import datetime
+import glob
+import os
+import uuid
+import yaml
+
+def collect_tasks():
+    """
+    Return tasks to be performed today.
+    """
+
+    tasks = []
+
+    # Read all yaml files in a given directory
+    # List all files, extract tasks per file.
+    files = glob.glob("/sdcard/repeat/*.yml")
+    for file in files:
+        tasks.extend(filter_tasks_from_yml(file))
+
+    return tasks
+
+def filter_tasks_from_yml(file):
+    """
+    Return tasks to be performed today from given file.
+    """
+
+    # Setting up usable expressions for trigger
+    date = datetime.date.today()
+    y = date.year
+    m = date.month
+    w = date.isocalendar()[1]
+    doy = date.timetuple().tm_yday
+    dom = date.day
+    dow = date.weekday()
+
+    with open(file, 'r') as stream:
+        try:
+            yml_tasks =  yaml.safe_load(stream)
+        except yaml.YAMLError as exception:
+            print(exception)
+
+    tasks = []
+
+    for title, task in yml_tasks.items():
+        task['title'] = title
+        if eval(task['when'].replace('.','').replace('\\','')):
+            tasks.append(task)
+
+    return tasks
+
+
+def create_notifications(tasks):
+    """
+    Create notifications for all tasks.
+    """
+
+    for task in tasks:
+        create_notification(task)
+
+    return
+
+def create_notification(task):
+    """
+    Create notification for a task.
+    """
+
+    id = str(uuid.uuid1())
+    cmd = []
+    cmd.append('termux-notification')
+    cmd.append('--id ' + id)
+    cmd.append('--content "' + task['title'] + '"')
+    cmd.append('--priority low')
+    cmd.append('--button1 Done')
+    cmd.append('--button1-action "termux-notification-remove ' + id + '"')
+    if 'details_uri' in task and task['details_uri']:
+        cmd.append('--button2 Details')
+        cmd.append('--button2-action "termux-share ' + task['details_uri'] + '"')
+    os.system(' '.join(cmd))
+
+    return
+
+if __name__ == '__main__':
+    # refresh code+tasks
+    # filter tasks
+    # Create notifications
+    tasks = collect_tasks()
+    create_notifications(tasks)
+
+
+#Short description
+#Buttons:
+#- Instructions (more details, link to recipe etc.)
+#- Done (calling the delete command and maybe storing the action in an sqliteDB
+
