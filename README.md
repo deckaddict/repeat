@@ -23,6 +23,14 @@ Pre-defined variables to use are:
 - dom: day of month
 - dow: day of week
 
+Example:
+```
+CleanWindows:
+  when: w%26 == 13 and dow == 6
+```
+
+This will remind you to clean your windows on the sunday of week 13 and week 39 every year.
+
 When fields are sanitized with a naive logic that prevents certain characters.
 For example, '.' and '\' are removed.
 
