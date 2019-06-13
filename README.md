@@ -32,6 +32,6 @@ CleanWindows:
 This will remind you to clean your windows on the sunday of week 13 and week 39 every year.
 
 When fields are sanitized with a naive logic that prevents certain characters.
-For example, '.' and '\' are removed.
+For example, '.' and '\\' are removed.
 
 To have repeat being run daily by the termux-job-scheduler and termux:boot.
