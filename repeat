@@ -1,8 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
 
+import argparse
 import datetime
 import glob
 import os
+import pickle
+import sys
 import uuid
 import yaml
 
@@ -77,20 +80,65 @@ def create_notification(task):
     if 'details_uri' in task and task['details_uri']:
         cmd.append('--button2 Details')
         cmd.append('--button2-action "termux-share ' + task['details_uri'] + '"')
+    print("Command: ", cmd)
     os.system(' '.join(cmd))
 
     return
 
+def check_advance_state():
+    """
+    Checks the current state of scheduling
+    Return values:
+    run      True if repeat shall run
+    schedule True if repeat shall be scheduled
+
+    """
+
+    states = ["PREMIER",
+              "RUN_ONCE",
+              "REGULAR"]
+
+    state_impact = {"PREMIER"  : (True, False),
+                    "RUN_ONCE" : (False, True),
+                    "REGULAR"  : (True, False)}
+
+    state = new_state = states[0]
+
+    STATE_FILE = "/sdcard/repeat/runstate.pickle"
+    # Check if state file exists
+    if os.path.isfile(STATE_FILE):
+        # Load data from pickle file
+        state = new_state = pickle.load(open(STATE_FILE, 'rb'))
+
+        current_state_ix = states.index(state)
+        if current_state_ix < len(states)-1:
+            new_state = states[current_state_ix+1]
+
+    pickle.dump(new_state, open(STATE_FILE, 'wb'))
+
+    print("State:",state)
+    return state_impact[state]
+
 if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser(description='Filter tasks and raise notifications')
+    parser.add_argument('--terminate', default=False, action='store_true',
+                        help='Stop re-scheduling')
+
+    args = parser.parse_args()
+
+    run, schedule = check_advance_state()
+
     # refresh code+tasks
     # filter tasks
     # Create notifications
-    tasks = collect_tasks()
-    create_notifications(tasks)
+    if run:
+        tasks = collect_tasks()
+        create_notifications(tasks)
 
+    if schedule:
+        os.system('termux-job-scheduler --job-id 239347 --period-ms 86400000 --script ' + sys.argv[0])
 
-#Short description
-#Buttons:
-#- Instructions (more details, link to recipe etc.)
-#- Done (calling the delete command and maybe storing the action in an sqliteDB
-
+    # Can set a stop state and then call itself instead...
+    if args.terminate:
+        os.system('termux-job-scheduler --job-id 239347 --script /data/data/com.termux/files/home/repeat/terminate')

@@ -1,0 +1,16 @@
+#!/data/data/com.termux/files/usr/bin/python
+
+# State handling
+# 1. Clean up state-files
+# schedule repeat next morning (runs once)
+# 2. No state-file: do stuff, add pickle-file for state run once
+# 3. Run once i.e next morning, do nothing, save state REGULAR, schedule repeat for every 24 hours
+# 4. State regular: do stuff
+
+import datetime
+import os
+
+os.system('rm /sdcard/repeat/runstate.pickle')
+now=datetime.datetime.now().time()
+delay=((24-now.hour+8)*60-now.minute)*60000
+os.system('termux-job-scheduler --job-id 239347 --period-ms ' + str(delay) + ' --script /data/data/com.termux/files/home/repeat/repeat')
