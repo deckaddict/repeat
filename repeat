@@ -19,8 +19,12 @@ def collect_tasks():
     # Read all yaml files in a given directory
     # List all files, extract tasks per file.
     files = glob.glob("/sdcard/repeat/*.yml")
-    for file in files:
-        tasks.extend(filter_tasks_from_yml(file))
+
+    try:
+        for file in files:
+            tasks.extend(filter_tasks_from_yml(file))
+    except Exception as exception:
+        tasks.extend([{'title':str(exception)}])
 
     return tasks
 
@@ -39,10 +43,7 @@ def filter_tasks_from_yml(file):
     dow = date.weekday()
 
     with open(file, 'r') as stream:
-        try:
-            yml_tasks =  yaml.safe_load(stream)
-        except yaml.YAMLError as exception:
-            print(exception)
+        yml_tasks =  yaml.safe_load(stream)
 
     tasks = []
 
